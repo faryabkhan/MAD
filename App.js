@@ -1,66 +1,75 @@
-import React from 'react';
-import { View, ImageBackground, TextInput, Button, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Text, View, StyleSheet } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 
-const LoginPage = () => {
+export default function App() {
+  const [userLocation, setUserLocation] = useState(null);
+  const comsatsAttockCoords = { latitude: 33.7661, longitude: 72.3593 };
+
+  useEffect(() => {
+    getLocation();
+  }, []);
+
+  const getLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={require('./assets/backk.jpg')}
-        style={styles.backgroundImage}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.loginContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              secureTextEntry={true}
-            />
-            <Button title="Login" onPress={() => {/* Handle login logic */}} />
-            <Text style={styles.forgotPasswordText}>Forgotten Password</Text>
-            <Text style={styles.createAccountText}>Create your account</Text>
-          </View>
-        </View>
-      </ImageBackground>
+      {userLocation ? (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        >
+          {/* Marker for user's current location */}
+          <Marker
+            coordinate={{
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            }}
+            title="Your Location"
+          />
+
+          {/* Marker for COMSATS Attock */}
+          <Marker
+            coordinate={comsatsAttockCoords}
+            title="COMSATS Attock"
+          />
+        </MapView>
+      ) : (
+        <Text>Loading...</Text>
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backgroundImage: {
-    flex: 0.5, // Adjust the height to cover half of the screen
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)', // Add an overlay to make text readable
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  loginContainer: {
-    paddingHorizontal: 20,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-  },
-  forgotPasswordText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: 'black',
-  },
-  createAccountText: {
-    textAlign: 'center',
-    marginTop: 10,
-    color: 'black',
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
-
-export default LoginPage;
